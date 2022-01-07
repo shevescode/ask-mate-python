@@ -1,10 +1,12 @@
-from flask import Flask, render_template, request, redirect
+import bcrypt
+from flask import Flask, render_template, request, redirect, session
 import data_manager
 import os
 import util
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/upload'
+app.secret_key = b'naszsekretnyklucz'
 
 ORDER_BY = 'order_by'
 ORDER_BY_LABELS = {'submission_time': 'Time added',
@@ -262,16 +264,26 @@ def save_image_to_file(files):
         pass
 
 
-@app.route("/login", methods=["GET"])
-def login():
-
-    return render_template('login.html')
-
-
 @app.route("/register", methods=["GET"])
 def register():
+    email = request.form.get("email")
+    password = request.form.get("password")
 
-    return render_template('register.html')
+    if request.method == "POST":
+        if email == emailfromdatabase and bcrypt.checkpw(password.encode("UTF-8"), passwordfromdatabase):
+            session["user_is_logged"] = True
+            return redirect("/")
+        else:
+            return render_template('/', error=True)
+
+
+@app.route("/register", methods=["POST"])
+def register_post():
+    display_username = request.form.get("display_username")
+    email = request.form.get("email")
+    password = bcrypt.hashpw(request.form.get("password").encode("UTF-8"), bcrypt.gensalt())
+    print(display_username, email, password)
+    return redirect("/")
 
 
 if __name__ == "__main__":
